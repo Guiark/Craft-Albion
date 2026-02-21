@@ -23,4 +23,4 @@ jobs:
       - name: Run Bot
         env:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
-        run: python bot_albion.py
+        run: python potion.py
