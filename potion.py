@@ -168,6 +168,6 @@ async def craft(interaction: discord.Interaction, potion: str, quantite: int, en
 async def potion_autocomplete(interaction: discord.Interaction, current: str):
     return [app_commands.Choice(name=p, value=p) for p in RECETTES.keys() if current.lower() in p.lower()][:25]
 
-# Lancement
+# Lancement 
 token = os.getenv("DISCORD_TOKEN")
 bot.run(token)
