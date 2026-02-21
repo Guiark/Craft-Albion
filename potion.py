@@ -84,7 +84,7 @@ async def on_ready():
     enchantement="Niveau d'enchantement (0, 1, 2 ou 3)",
     prix_vente="Prix unitaire au marché (pour calcul de profit)"
 )
-async def craft(interaction: discord.Interaction, potion: str, quantite: int, enchantement: int = 0, prix_vente: int = None):
+async def craft(interaction: discord.Interaction, potion: str, quantite: int, enchantement: int = 0, prix_vente: int = 0):
     # Recherche de la potion
     potion_match = None
     for p in RECETTES.keys():
@@ -150,7 +150,7 @@ async def craft(interaction: discord.Interaction, potion: str, quantite: int, en
     embed.add_field(name="Ingrédients nécessaires", value=details, inline=False)
 
     # Calcul Profit
-    if prix_vente:
+    if prix_vente and prix_vente > 0:
         ca_brut = total_reel * prix_vente
         ca_net = int(ca_brut * 0.935) # Retrait taxe 6.5%
         profit_unit = int(ca_net / total_reel)
