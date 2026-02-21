@@ -1,11 +1,12 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
+import os
 import math
 import re
 
 # --- CONFIGURATION ---
-TOKEN = "MTQ3NDU1MzE2MzE0NjIwMzE1Ng.GsE3fL.7ckMIhGvrXrlBNF42yB5gdUQBx50w4G-fEhO-0"
+TOKEN = os.getenv('DISCORD_TOKEN')
 RENDEMENT_PLANTE = 54
 RENDEMENT_ANIMAL = 14
 RENDEMENT_GNOLE = 54
