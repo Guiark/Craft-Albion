@@ -1,5 +1,15 @@
+import discord
+from discord.ext import commands
+from discord import app_commands
 import math
 import re
+
+# --- CONFIGURATION ---
+TOKEN = "MTQ3NDU1MzE2MzE0NjIwMzE1Ng.GsE3fL.7ckMIhGvrXrlBNF42yB5gdUQBx50w4G-fEhO-0"
+RENDEMENT_PLANTE = 54
+RENDEMENT_ANIMAL = 14
+RENDEMENT_GNOLE = 54
+PLOTS_PAR_ILE = 16
 
 # --- BASE DE DONNÉES ---
 RECETTES = {
@@ -26,91 +36,90 @@ RECETTES = {
     "Soin T6": {"Digital furtive (T6)": 72, "Oeuf d'oie (T5)": 18, "Schnaps de patate (T6)": 18},
     "Infernal T6": {"Crone de diablotin (T5)": 1, "Lait de mouton (T6)": 48, "Digital furtive (T6)": 24, "Oeufs de poule (T3)": 12},
     "Tornade T6": {"Plume de l'aube (T5)": 1, "Digital furtive (T6)": 48, "Cardère incendiaire (T5)": 24, "Oeufs de poule (T3)": 12},
-    "schnaps T6": {"Patates (T6)": 1},
     "Acide T7": {"Pattes d'esprit (T7)": 1, "Molène ardente (T7)": 144, "Digital furtive (T6)": 72, "Schnaps de patate (T6)": 72, "Lait de mouton (T6)": 36, "Gnôle de maïs (T7)": 36},
     "Purification T7": {"Racine de sylvain (T7)": 1, "Molène ardente (T7)": 144, "Chardon crénelé (T4)": 72, "Consoude feuille-vive (T3)": 72, "Beurre de mouton (T6)": 36, "Gnôle de maïs (T7)": 36},
     "Calme T7": {"Griffes de l'ombre (T7)": 1, "Molène ardente (T7)": 144, "Digital furtive (T6)": 72, "Consoude feuille-vive (T3)": 72, "Agaric ésotérique (T2)": 36, "Gnôle de maïs (T7)": 36},
     "Gigantisme T7": {"Molène ardente (T7)": 72, "Digital furtive (T6)": 36, "Oeuf d'oie (T5)": 18, "Gnôle de maïs (T7)": 18},
     "Résistance T7": {"Molène ardente (T7)": 72, "Digital furtive (T6)": 36, "Chardon crénelé (T4)": 36, "Lait de mouton (T6)": 18, "Gnôle de maïs (T7)": 18},
-    "Gnôle T7": {"Maïs": 1},
     "Berserker T8": {"Crocs de loup-garou (T7)": 1, "Mille-feuille morbide (T8)": 144, "Consoude feuille-vive (T3)": 72, "Schnaps de patate (T6)": 72, "Gnôle de maïs (T7)": 36, "Gnôle de citrouille (T8)": 36},
     "Invisible T8": {"Mille-feuille morbide (T8)": 72, "Molène ardente (T7)": 36, "Cardère incendiaire (T5)": 36, "Lait de vache": 18, "Gnôle de citrouille (T8)": 18},
     "Poison T8": {"Mille-feuille morbide (T8)": 72, "Molène ardente (T7)": 36, "Cardère incendiaire (T5)": 36, "Lait de vache": 18, "Gnôle de citrouille (T8)": 18},
     "Récolte T8": {"Dent de pierre runique (T7)": 1, "Beurre de vache": 144, "Mille-feuille morbide (T8)": 72, "Molène ardente (T7)": 72, "Digital furtive (T6)": 36, "Gnôle de citrouille (T8)": 36},
     "Infernal T8": {"Crone de diablotin (T7)": 1, "Lait de vache": 144, "Mille-feuille morbide (T8)": 72, "Molène ardente (T7)": 72, "Oeuf d'oie (T5)": 36, "Gnôle de citrouille (T8)": 36},
     "Tornade T8": {"Plume de l'aube (T7)": 1, "Mille-feuille morbide (T8)": 144, "Molène ardente (T7)": 72, "Gnôle de maïs (T7)": 72, "Oeuf d'oie (T5)": 36, "Gnôle de citrouille (T8)": 36},
-    "Gnôle T8": {"Citrouille (T8)": 1}
 }
 
-# --- CONFIGURATION (SÉCURITÉ MAX) ---
-rendement_plante = 54
-rendement_animal = 14  # Valeur basse pour être sûr
-rendement_gnole = 54
-plots_par_ile = 16
+COUTS_FEES_BASE = {
+    "5": ["Résistance T3", "Gigantisme T3", "Collante T3", "Poison T4"],
+    "10": ["Calme T3", "Purification T3", "Acide T3", "Berserker T4", "Infernal T4", "Récolte T4", "Tornade T4"],
+    "15": ["Soin T4", "Énergie T4", "Gigantisme T5", "Résistance T5", "Collante T5", "Poison T6"],
+    "30": ["Calme T5", "Purification T5", "Acide T5", "Berserker T6", "Infernal T6", "Récolte T6", "Tornade T6"],
+    "45": ["Soin T6", "Énergie T6", "Gigantisme T7", "Résistance T7", "Collante T7", "Invisible T8", "Poison T8"],
+    "90": ["Calme T7", "Purification T7", "Acide T7", "Berserker T8", "Infernal T8", "Récolte T8", "Tornade T8"]
+}
 
-def alchimie():
-    print("\n" + "="*65)
-    print("           ALBION PRODUCTION POTIONS - MENU")
-    print("="*65)
+class CraftBot(commands.Bot):
+    def __init__(self):
+        intents = discord.Intents.default()
+        super().__init__(command_prefix="!", intents=intents)
 
-    popos_liste = list(RECETTES.keys())
-    tiers = ["T3", "T4", "T5", "T6", "T7", "T8"]
-    
-    for t in tiers:
-        print(f"\n-----------------------{t}-----------------------")
-        potions_du_tier = [(i+1, nom) for i, nom in enumerate(popos_liste) if t in nom]
-        for j in range(0, len(potions_du_tier), 2):
-            p1 = potions_du_tier[j]
-            p2 = potions_du_tier[j+1] if j+1 < len(potions_du_tier) else None
-            txt1 = f"{p1[0]:>2}. {p1[1]:<20}"
-            txt2 = f"{p2[0]:>2}. {p2[1]:<20}" if p2 else ""
-            print(f"{txt1} | {txt2}")
-    
-    print("\n" + "="*65)
-    
-    try:
-        choix = int(input("\nChoisis le numéro de la potion : "))
-        nom_selectionne = popos_liste[choix - 1]
-        qte_visee = int(input(f"Quantité de [{nom_selectionne}] à produire : "))
-        enchant = int(input(f"Enchantement (0, 1, 2 ou 3) : "))
-        
-        # Mapping des coûts des fées
-        COUTS_FEES_BASE = {
-            "5": ["Résistance T3", "Gigantisme T3", "Collante T3", "Poison T4"],
-            "10": ["Calme T3", "Purification T3", "Acide T3", "Berserker T4", "Infernal T4", "Récolte T4", "Tornade T4"],
-            "15": ["Soin T4", "Énergie T4", "Gigantisme T5", "Résistance T5", "Collante T5", "Poison T6"],
-            "30": ["Calme T5", "Purification T5", "Acide T5", "Berserker T6", "Infernal T6", "Récolte T6", "Tornade T6"],
-            "45": ["Soin T6", "Énergie T6", "Gigantisme T7", "Résistance T7", "Collante T7", "Invisible T8", "Poison T8"],
-            "90": ["Calme T7", "Purification T7", "Acide T7", "Berserker T8", "Infernal T8", "Récolte T8", "Tornade T8"]
-        }
-    except (ValueError, IndexError):
-        print("Erreur : Entrée invalide !")
-        return
+    async def setup_hook(self):
+        await self.tree.sync()
 
-    # --- CALCULS ---
+bot = CraftBot()
+
+@bot.event
+async def on_ready():
+    print(f"✅ Bot connecté en tant que {bot.user}")
+
+@bot.tree.command(name="craft", description="Calcule les ressources pour une potion")
+@app_commands.describe(
+    potion="Nom de la potion",
+    quantite="Quantité totale désirée",
+    enchantement="Niveau d'enchantement (0-3)"
+)
+async def craft(interaction: discord.Interaction, potion: str, quantite: int, enchantement: int = 0):
+    # Recherche floue (pour éviter de taper le nom exact à la lettre près)
+    potion_match = None
+    for p in RECETTES.keys():
+        if potion.lower() in p.lower():
+            potion_match = p
+            break
+    
+    if not potion_match:
+        return await interaction.response.send_message(f"❌ Potion '{potion}' non trouvée dans la base.", ephemeral=True)
+
+    # --- LOGIQUE DE CALCUL ---
     popos_x5 = ["gigantisme", "résistance", "collante", "soin", "énergie", "poison", "invisible"]
-    unites_par_craft = 5 if any(x in nom_selectionne.lower() for x in popos_x5) else 10
-    nb_crafts = math.ceil(qte_visee / unites_par_craft)
+    unites_par_craft = 5 if any(x in potion_match.lower() for x in popos_x5) else 10
+    nb_crafts = math.ceil(quantite / unites_par_craft)
+    total_reel = nb_crafts * unites_par_craft
 
-    ingredients = RECETTES[nom_selectionne].copy()
-    if enchant > 0:
+    ingredients = RECETTES[potion_match].copy()
+    
+    # Gestion des fées
+    if enchantement > 0:
         fee_unitaire = 0
-        for qte, liste in COUTS_FEES_BASE.items():
-            if nom_selectionne in liste:
-                fee_unitaire = int(qte)
+        for q, liste in COUTS_FEES_BASE.items():
+            if potion_match in liste:
+                fee_unitaire = int(q)
                 break
         if fee_unitaire > 0:
-            tier_match = re.search(r'T(\d)', nom_selectionne)
+            tier_match = re.search(r'T(\d)', potion_match)
             tier_num = tier_match.group(1) if tier_match else "X"
-            nom_fee = f"Extrait arcanique (T{tier_num}.{enchant})"
+            nom_fee = f"Extrait (T{tier_num}.{enchantement})"
             ingredients[nom_fee] = fee_unitaire
 
-    print(f"\n{'-' * 20} RÉSULTATS {'-' * 20}")
-    print(f"📦 Type : {unites_par_craft} par craft | 🔨 Nombre de crafts : {nb_crafts}")
-    print(f"🎯 Total produit : {nb_crafts * unites_par_craft} potions\n")
+    # --- PRÉPARATION DE L'EMBED ---
+    embed = discord.Embed(
+        title=f"🛠️ Production : {potion_match}",
+        color=discord.Color.green(),
+        description=f"Cible : **{quantite}** | Produit : **{total_reel}** ({nb_crafts} crafts)"
+    )
 
     total_plots = 0
     besoin_animaux = False
+    details_ing = ""
 
     for ing, qte_recette in ingredients.items():
         besoin_total = qte_recette * nb_crafts
@@ -118,33 +127,39 @@ def alchimie():
         
         # Détection du type
         if any(x in ing_low for x in ["lait", "oeuf", "beurre"]):
-            rendement, emoji, hdv, animal = rendement_animal, "🐄 ", False, True
+            rendement, emoji, hdv = RENDEMENT_ANIMAL, "🐄", False
             besoin_animaux = True
         elif any(x in ing_low for x in ["gnôle", "schnaps", "patate", "maïs", "citrouille"]):
-            rendement, emoji, hdv, animal = rendement_gnole, "🍺 ", False, False
+            rendement, emoji, hdv = RENDEMENT_GNOLE, "🍺", False
         elif any(x in ing_low for x in ["consoude", "chardon", "cardère", "digital", "molène", "mille-feuille", "agaric"]):
-            rendement, emoji, hdv, animal = rendement_plante, "🌱 ", False, False
-        elif any(x in ing_low for x in ["griffes", "pattes", "corne", "crocs", "plume", "dent", "racine", "extrait"]):
-            emoji, hdv, animal = "⚔️ ", True, False
-        else:
-            rendement, emoji, hdv, animal = rendement_plante, "🌱 ", False, False
+            rendement, emoji, hdv = RENDEMENT_PLANTE, "🌱", False
+        else: # Ressources de monstres
+            emoji, hdv = "⚔️", True
 
         if hdv:
-            print(f"{emoji}{ing:.<30} Besoins : {besoin_total:>6} | [ACHETER HDV]")
+            details_ing += f"{emoji} **{ing}** : {besoin_total:,} (Acheter HDV)\n"
         else:
             nb_plots = math.ceil(besoin_total / rendement)
             total_plots += nb_plots
-            print(f"{emoji}{ing:.<30} Besoins : {besoin_total:>6} | Plots : {nb_plots}")
+            details_ing += f"{emoji} **{ing}** : {besoin_total:,} ({nb_plots} plots)\n"
 
-    # --- FINAL ---
-    nb_iles = math.ceil(total_plots / plots_par_ile)
-    print("-" * 65)
-    print(f"🚜 Total de plots nécessaires : {total_plots}")
-    print(f"🏝️  Estimation d'îles (16 plots) : {nb_iles}")
+    embed.add_field(name="Ingrédients nécessaires", value=details_ing, inline=False)
+    
+    nb_iles = math.ceil(total_plots / PLOTS_PAR_ILE)
+    footer_text = f"🚜 Total Plots : {total_plots} | 🏝️ Îles (16p) : {nb_iles}"
     if besoin_animaux:
-        print("\n💡 NOTE : Achète des ANIMAUX ADULTES, c'est plus rentable !")
-        print("   Nourris-les avec la plante la moins chère (Carottes).")
-    print("-" * 65)
+        footer_text += "\n💡 Note : Achète des animaux ADULTES pour le lait/oeufs !"
+    
+    embed.set_footer(text=footer_text)
 
-if __name__ == "__main__":
-    alchimie()
+    await interaction.response.send_message(embed=embed)
+
+# Autocomplétion pour le nom des potions
+@craft.autocomplete('potion')
+async def potion_autocomplete(interaction: discord.Interaction, current: str):
+    return [
+        app_commands.Choice(name=p, value=p)
+        for p in RECETTES.keys() if current.lower() in p.lower()
+    ][:25] # Limite Discord de 25 choix
+
+bot.run(TOKEN)
