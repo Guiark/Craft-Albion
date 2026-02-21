@@ -128,8 +128,8 @@ async def craft(interaction: discord.Interaction, potion: str, quantite: int, en
     embed.set_footer(text=f"🚜 Total Plots : {total_plots} | 🏝️ Îles : {nb_iles}")
     await interaction.response.send_message(embed=embed)
 
-# --- COMMANDE /SIMUL_PLOTS ---
-@bot.tree.command(name="simul_plots", description="Combien de potions avec mes terrains ?")
+# --- COMMANDE /SIMUL_PLOTS (Mise à jour avec répartition des champs) ---
+@bot.tree.command(name="simul_plots", description="Combien de potions avec mes terrains et répartition des champs ?")
 @app_commands.describe(
     potion="Nom de la potion",
     nb_plots="Nombre total d'emplacements (plots)",
@@ -145,6 +145,7 @@ async def simul_plots(interaction: discord.Interaction, potion: str, nb_plots: i
     ingredients = RECETTES[potion_match]
     poids_terrain_par_craft = 0
     
+    # Étape 1 : Calculer le "poids" total en terrain pour 1 craft
     for ing, qte_unitaire in ingredients.items():
         rend, _ = get_info_ingredient(ing)
         if rend:
@@ -154,17 +155,30 @@ async def simul_plots(interaction: discord.Interaction, potion: str, nb_plots: i
         await interaction.response.send_message("⚠️ Cette potion ne demande aucune ressource cultivable.", ephemeral=True)
         return
 
+    # Étape 2 : Calculer le nombre de crafts possibles
     nb_crafts_possibles = math.floor(nb_plots / poids_terrain_par_craft)
     popos_x5 = ["gigantisme", "résistance", "collante", "soin", "énergie", "poison", "invisible"]
     unites_par_craft = 5 if any(x in potion_match.lower() for x in popos_x5) else 10
     total_potions = nb_crafts_possibles * unites_par_craft
 
+    # Étape 3 : Calculer la répartition exacte des plots
+    repartition_txt = ""
+    for ing, qte_unitaire in ingredients.items():
+        rend, emo = get_info_ingredient(ing)
+        if rend:
+            besoin_total = qte_unitaire * nb_crafts_possibles
+            plots_dedies = math.ceil(besoin_total / rend)
+            repartition_txt += f"{emo} **{ing}** : {plots_dedies} plots\n"
+        else:
+            repartition_txt += f"⚔️ **{ing}** : À acheter à l'HDV\n"
+
+    # Construction de l'Embed
     embed = discord.Embed(title="📊 Résultat de la simulation", color=discord.Color.green())
     embed.add_field(name="Configuration", value=f"📍 {nb_plots} plots\n🧪 {potion_match}", inline=False)
     embed.add_field(name="Production possible", value=f"✨ **{total_potions:,}** unités\n📦 ({nb_crafts_possibles} sessions de craft)", inline=False)
+    embed.add_field(name="🌱 Répartition des champs", value=repartition_txt, inline=False)
     
     await interaction.response.send_message(embed=embed)
-
 # --- AUTOCOMPLÉTION ---
 @craft.autocomplete('potion')
 @simul_plots.autocomplete('potion')
