@@ -84,6 +84,15 @@ async def on_ready():
     enchantement="Niveau d'enchantement (0, 1, 2 ou 3)",
     prix_vente="Prix unitaire au marché (pour calcul de profit)"
 )
+@bot.tree.command(name="simul_plots", description="Calcule combien de potions tu peux craft avec tes terrains")
+@app_commands.describe(
+    potion="Nom de la potion à crafter",
+    nb_plots="Nombre total de plots (emplacements) disponibles",
+    enchantement="Niveau d'enchantement (0-3)"
+)
+async def simul_plots(interaction: discord.Interaction, potion: str, nb_plots: int, enchantement: int = 0):
+    # 1. Recherche de la potion
+    potion_match = next((p for p in RECETTES.keys() if potion.lower() in p.lower()), None)
 async def craft(interaction: discord.Interaction, potion: str, quantite: int, enchantement: int = 0, prix_vente: int = 0):
     # Recherche de la potion
     potion_match = None
