@@ -154,11 +154,6 @@ async def simul(interaction: discord.Interaction, potion: str, nb_plots: int):
     embed.add_field(name="🌱 Répartition des champs", value=repartition, inline=False)
     
     await interaction.response.send_message(embed=embed)
-
-# --- LANCEMENT ---
-# Remplace par ton vrai token ou utilise une variable d'environnement
-token = "TON_TOKEN_ICI"
-bot.run(token)
 # --- LANCEMENT ---
 token = os.getenv("DISCORD_TOKEN")
 if token:
