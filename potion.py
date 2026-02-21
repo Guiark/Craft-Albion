@@ -2,7 +2,6 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 import math
-import re
 import os
 
 # --- CONFIGURATION ALBION ---
@@ -49,15 +48,6 @@ RECETTES = {
     "Tornade T8": {"Plume de l'aube (T7)": 1, "Mille-feuille morbide (T8)": 144, "Molène ardente (T7)": 72, "Gnôle de maïs (T7)": 72, "Oeuf d'oie (T5)": 36, "Gnôle de citrouille (T8)": 36},
 }
 
-COUTS_FEES_BASE = {
-    "5": ["Résistance T3", "Gigantisme T3", "Collante T3", "Poison T4"],
-    "10": ["Calme T3", "Purification T3", "Acide T3", "Berserker T4", "Infernal T4", "Récolte T4", "Tornade T4"],
-    "15": ["Soin T4", "Énergie T4", "Gigantisme T5", "Résistance T5", "Collante T5", "Poison T6"],
-    "30": ["Calme T5", "Purification T5", "Acide T5", "Berserker T6", "Infernal T6", "Récolte T6", "Tornade T6"],
-    "45": ["Soin T6", "Énergie T6", "Gigantisme T7", "Résistance T7", "Collante T7", "Invisible T8", "Poison T8"],
-    "90": ["Calme T7", "Purification T7", "Acide T7", "Berserker T8", "Infernal T8", "Récolte T8", "Tornade T8"]
-}
-
 # --- CLASSE DU BOT ---
 class AlbionBot(commands.Bot):
     def __init__(self):
@@ -74,7 +64,7 @@ bot = AlbionBot()
 async def on_ready():
     print(f"🔥 Connecté en tant que {bot.user}")
 
-# --- FONCTION UTILITAIRE ---
+# --- UTILITAIRES ---
 def get_info_ingredient(nom_ingredient):
     low = nom_ingredient.lower()
     if any(x in low for x in ["lait", "oeuf", "beurre"]): return RENDEMENT_ANIMAL, "🐄"
@@ -82,33 +72,32 @@ def get_info_ingredient(nom_ingredient):
     if any(x in low for x in ["consoude", "chardon", "cardère", "digital", "molène", "mille-feuille", "agaric"]): return RENDEMENT_PLANTE, "🌱"
     return None, "⚔️"
 
+# --- AUTOCOMPLÉTION ---
+async def potion_autocomplete(interaction: discord.Interaction, current: str):
+    return [
+        app_commands.Choice(name=p, value=p) 
+        for p in RECETTES.keys() if current.lower() in p.lower()
+    ][:25]
+
 # --- COMMANDE /CRAFT ---
-@bot.tree.command(name="craft", description="Calcule les ressources pour une quantité de potions")
-@app_commands.describe(
-    potion="Nom de la potion (ex: Soin T6)",
-    quantite="Quantité totale de potions",
-    enchantement="Niveau d'enchantement (0-3)",
-    prix_vente="Prix unitaire au marché"
-)
-async def craft(interaction: discord.Interaction, potion: str, quantite: int, enchantement: int = 0, prix_vente: int = 0):
-    potion_match = next((p for p in RECETTES.keys() if potion.lower() in p.lower()), None)
-    
-    if not potion_match:
-        await interaction.response.send_message(f"❌ Potion '{potion}' introuvable.", ephemeral=True)
+@bot.tree.command(name="craft", description="Calcule les ressources nécessaires pour un nombre de potions")
+@app_commands.autocomplete(potion=potion_autocomplete)
+@app_commands.describe(potion="Nom de la potion", quantite="Nombre de potions voulues", prix_vente="Prix unitaire HDV")
+async def craft(interaction: discord.Interaction, potion: str, quantite: int, prix_vente: int = 0):
+    if potion not in RECETTES:
+        await interaction.response.send_message("❌ Potion introuvable.", ephemeral=True)
         return
 
     popos_x5 = ["gigantisme", "résistance", "collante", "soin", "énergie", "poison", "invisible"]
-    unites_par_craft = 5 if any(x in potion_match.lower() for x in popos_x5) else 10
+    unites_par_craft = 5 if any(x in potion.lower() for x in popos_x5) else 10
     nb_crafts = math.ceil(quantite / unites_par_craft)
     total_reel = nb_crafts * unites_par_craft
 
-    ingredients = RECETTES[potion_match].copy()
-    
-    embed = discord.Embed(title=f"🧪 {potion_match} (.{enchantement})", color=discord.Color.blue())
+    embed = discord.Embed(title=f"🧪 Craft : {potion}", color=discord.Color.blue())
     
     details = ""
     total_plots = 0
-    for ing, qte_recette in ingredients.items():
+    for ing, qte_recette in RECETTES[potion].items():
         besoin = qte_recette * nb_crafts
         rend, emo = get_info_ingredient(ing)
         if rend:
@@ -122,69 +111,54 @@ async def craft(interaction: discord.Interaction, potion: str, quantite: int, en
     
     if prix_vente > 0:
         ca_net = int((total_reel * prix_vente) * 0.935)
-        embed.add_field(name="Estimation Argent", value=f"💰 Net (taxe 6.5%) : **{ca_net:,}**", inline=False)
+        embed.add_field(name="💰 Argent", value=f"Estimation Net (taxe 6.5%) : **{ca_net:,}**", inline=False)
 
     nb_iles = math.ceil(total_plots / PLOTS_PAR_ILE)
-    embed.set_footer(text=f"🚜 Total Plots : {total_plots} | 🏝️ Îles : {nb_iles}")
+    embed.set_footer(text=f"🚜 Plots : {total_plots} | 🏝️ Îles : {nb_iles}")
     await interaction.response.send_message(embed=embed)
 
-# --- COMMANDE /SIMUL_PLOTS (Mise à jour avec répartition des champs) ---
-@bot.tree.command(name="simul_plots", description="Combien de potions avec mes terrains et répartition des champs ?")
-@app_commands.describe(
-    potion="Nom de la potion",
-    nb_plots="Nombre total d'emplacements (plots)",
-    enchantement="Niveau d'enchantement (0-3)"
-)
-async def simul_plots(interaction: discord.Interaction, potion: str, nb_plots: int, enchantement: int = 0):
-    potion_match = next((p for p in RECETTES.keys() if potion.lower() in p.lower()), None)
-    
-    if not potion_match:
-        await interaction.response.send_message(f"❌ Potion '{potion}' introuvable.", ephemeral=True)
+# --- COMMANDE /SIMUL ---
+@bot.tree.command(name="simul", description="Calcule ce que tu peux produire avec tes terrains")
+@app_commands.autocomplete(potion=potion_autocomplete)
+@app_commands.describe(potion="Nom de la potion", nb_plots="Nombre de plots disponibles")
+async def simul(interaction: discord.Interaction, potion: str, nb_plots: int):
+    if potion not in RECETTES:
+        await interaction.response.send_message("❌ Potion introuvable.", ephemeral=True)
         return
 
-    ingredients = RECETTES[potion_match]
+    ingredients = RECETTES[potion]
     poids_terrain_par_craft = 0
-    
-    # Étape 1 : Calculer le "poids" total en terrain pour 1 craft
     for ing, qte_unitaire in ingredients.items():
         rend, _ = get_info_ingredient(ing)
         if rend:
             poids_terrain_par_craft += (qte_unitaire / rend)
 
     if poids_terrain_par_craft == 0:
-        await interaction.response.send_message("⚠️ Cette potion ne demande aucune ressource cultivable.", ephemeral=True)
+        await interaction.response.send_message("⚠️ Aucune ressource cultivable pour cette potion.", ephemeral=True)
         return
 
-    # Étape 2 : Calculer le nombre de crafts possibles
     nb_crafts_possibles = math.floor(nb_plots / poids_terrain_par_craft)
     popos_x5 = ["gigantisme", "résistance", "collante", "soin", "énergie", "poison", "invisible"]
-    unites_par_craft = 5 if any(x in potion_match.lower() for x in popos_x5) else 10
+    unites_par_craft = 5 if any(x in potion.lower() for x in popos_x5) else 10
     total_potions = nb_crafts_possibles * unites_par_craft
 
-    # Étape 3 : Calculer la répartition exacte des plots
-    repartition_txt = ""
+    repartition = ""
     for ing, qte_unitaire in ingredients.items():
         rend, emo = get_info_ingredient(ing)
         if rend:
-            besoin_total = qte_unitaire * nb_crafts_possibles
-            plots_dedies = math.ceil(besoin_total / rend)
-            repartition_txt += f"{emo} **{ing}** : {plots_dedies} plots\n"
-        else:
-            repartition_txt += f"⚔️ **{ing}** : À acheter à l'HDV\n"
+            plots_dedies = math.ceil((qte_unitaire * nb_crafts_possibles) / rend)
+            repartition += f"{emo} **{ing}** : {plots_dedies} plots\n"
 
-    # Construction de l'Embed
-    embed = discord.Embed(title="📊 Résultat de la simulation", color=discord.Color.green())
-    embed.add_field(name="Configuration", value=f"📍 {nb_plots} plots\n🧪 {potion_match}", inline=False)
-    embed.add_field(name="Production possible", value=f"✨ **{total_potions:,}** unités\n📦 ({nb_crafts_possibles} sessions de craft)", inline=False)
-    embed.add_field(name="🌱 Répartition des champs", value=repartition_txt, inline=False)
+    embed = discord.Embed(title="📊 Simulation de Production", color=discord.Color.green())
+    embed.add_field(name="Capacité", value=f"🧪 {potion}\n📍 {nb_plots} plots\n✨ **{total_potions:,}** unités", inline=False)
+    embed.add_field(name="🌱 Répartition des champs", value=repartition, inline=False)
     
     await interaction.response.send_message(embed=embed)
-# --- AUTOCOMPLÉTION ---
-@craft.autocomplete('potion')
-@simul_plots.autocomplete('potion')
-async def potion_autocomplete(interaction: discord.Interaction, current: str):
-    return [app_commands.Choice(name=p, value=p) for p in RECETTES.keys() if current.lower() in p.lower()][:25]
 
+# --- LANCEMENT ---
+# Remplace par ton vrai token ou utilise une variable d'environnement
+token = "TON_TOKEN_ICI"
+bot.run(token)
 # --- LANCEMENT ---
 token = os.getenv("DISCORD_TOKEN")
 if token:
