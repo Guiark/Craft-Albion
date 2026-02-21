@@ -120,7 +120,7 @@ async def craft(interaction: discord.Interaction, potion: str, quantite: int, en
     # Création de l'Embed
     embed = discord.Embed(
         title=f"🧪 {potion_match} (.{enchantement})",
-        color=discord.Color.green(),
+        color=discord.Color.red(),
         description=f"**{total_reel:,}** potions prévues ({nb_crafts} crafts)"
     )
 
