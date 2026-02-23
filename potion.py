@@ -1,6 +1,7 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
+import os
 import math
 
 # --- CONFIGURATION ALBION ---
@@ -129,4 +130,8 @@ async def calculer(interaction: discord.Interaction, potion: str, plots: int, no
 
     await interaction.response.send_message(embed=embed)
 
-    bot.run(DISCORD_TOKEN)
+token = os.getenv('DISCORD_TOKEN')
+if token:
+    bot.run(token)
+else:
+    print("Erreur : Le DISCORD_TOKEN n'est pas configuré dans les Secrets GitHub.")
