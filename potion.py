@@ -161,4 +161,4 @@ token = os.getenv("DISCORD_TOKEN")
 if token:
     bot.run(token)
 else:
-    print("❌ Erreur : Le DISCORD_TOKEN est introuvable dans les variables d'environnement.")
+    print("❌ Erreur : Le DISCORD_TOKEN est introuvable dans les variables d'environnement.") 
