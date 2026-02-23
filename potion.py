@@ -162,4 +162,4 @@ if token:
     bot.run(token)
 else:
     print("❌ Erreur : Le DISCORD_TOKEN est introuvable dans les variables d'environnement.") 
-# --- restart
+# --- r-
