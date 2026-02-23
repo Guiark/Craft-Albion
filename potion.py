@@ -1,8 +1,8 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
-import os
 import math
+import os
 
 # --- CONFIGURATION ALBION ---
 RENDEMENT_PLANTE = 54
@@ -55,38 +55,42 @@ def get_info_ingredient(nom_ingredient):
     if any(x in low for x in ["consoude", "chardon", "cardère", "digital", "molène", "mille-feuille", "agaric"]): return RENDEMENT_PLANTE, "🌱", False
     return None, "⚔️", False
 
-# --- CONFIG BOT ---
 class MyBot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
-        super().__init__(command_prefix="/", intents=intents)
+        super().__init__(command_prefix="!", intents=intents)
 
     async def setup_hook(self):
         await self.tree.sync()
 
 bot = MyBot()
 
-@bot.event
-async def on_ready():
-    print(f"Connecté en tant que {bot.user} (ID: {bot.user.id})")
+# --- FONCTION D'AUTO-COMPLÉTION ---
+async def potion_autocomplete(
+    interaction: discord.Interaction,
+    current: str,
+) -> list[app_commands.Choice[str]]:
+    potions = list(RECETTES.keys())
+    return [
+        app_commands.Choice(name=p, value=p)
+        for p in potions if current.lower() in p.lower()
+    ][:25] # Limite Discord de 25 choix
 
-@bot.tree.command(name="potion", description="Calcule la production possible selon tes plots")
+@bot.tree.command(name="potion", description="Fabriquation Artisanal")
 @app_commands.describe(
-    potion="Le nom de la potion (ex: Soin T4)",
-    plots="Nombre total de plots disponibles",
+    potion="Choisis ta potion dans la liste",
+    plots="Nombre total de plots disponibles (ex: 18)",
     nourrir_animaux="Cultiver soi-même la nourriture des animaux ?"
 )
+@app_commands.autocomplete(potion=potion_autocomplete) # On lie l'autocomplete au champ potion
 async def calculer(interaction: discord.Interaction, potion: str, plots: int, nourrir_animaux: bool = True):
-    potion_match = next((p for p in RECETTES.keys() if potion.lower() in p.lower()), None)
-    
-    if not potion_match:
-        await interaction.response.send_message(f"❌ Potion '{potion}' introuvable.", ephemeral=True)
+    if potion not in RECETTES:
+        await interaction.response.send_message(f"❌ Potion '{potion}' invalide. Utilise la liste suggérée.", ephemeral=True)
         return
 
-    ingredients = RECETTES[potion_match]
+    ingredients = RECETTES[potion]
     poids_terrain_par_craft = 0
     
-    # Calcul du poids de terrain par craft
     for ing, qte_unitaire in ingredients.items():
         rend, _, est_animal = get_info_ingredient(ing)
         if rend:
@@ -95,21 +99,17 @@ async def calculer(interaction: discord.Interaction, potion: str, plots: int, no
                 besoin_nourriture = (qte_unitaire / rend) * ANIMAUX_PAR_ENCLOS * CONSOMMATION_PAR_BÊTE
                 poids_terrain_par_craft += (besoin_nourriture / RENDEMENT_PLANTE)
 
-    if poids_terrain_par_craft == 0:
-        await interaction.response.send_message("Cette potion ne nécessite pas de cultures.", ephemeral=True)
-        return
-
     nb_crafts_possibles = math.floor(plots / poids_terrain_par_craft)
     popos_x5 = ["gigantisme", "résistance", "collante", "soin", "énergie", "poison", "invisible"]
-    unites_per_craft = 5 if any(x in potion_match.lower() for x in popos_x5) else 10
+    unites_per_craft = 5 if any(x in potion.lower() for x in popos_x5) else 10
     total_potions = nb_crafts_possibles * unites_per_craft
 
-    # Construction de l'Embed Discord
     embed = discord.Embed(
-        title=f"📊 Simulation : {potion_match}",
+        title=f"📊 Simulation : {potion}",
+        description=f"Basé sur **{plots}** plots disponibles",
         color=discord.Color.green()
     )
-    embed.add_field(name="📦 Production", value=f"**{total_potions:,}** potions\n({nb_crafts_possibles} crafts)", inline=False)
+    embed.add_field(name="📦 Production estimée", value=f"**{total_potions:,}** potions\n({nb_crafts_possibles} crafts)", inline=False)
     
     detail_text = ""
     for ing, qte_unitaire in ingredients.items():
@@ -120,18 +120,17 @@ async def calculer(interaction: discord.Interaction, potion: str, plots: int, no
             detail_text += f"{emo} **{ing}** : {plots_ingredi} plots\n"
             
             if est_animal and nourrir_animaux:
-                nb_betes = (besoin_ressource / rend) * ANIMAUX_PAR_ENCLOS
-                total_nourriture = nb_betes * CONSOMMATION_PAR_BÊTE
+                total_nourriture = (besoin_ressource / rend) * ANIMAUX_PAR_ENCLOS * CONSOMMATION_PAR_BÊTE
                 plots_nourriture = math.ceil(total_nourriture / RENDEMENT_PLANTE)
                 detail_text += f"└─ 🥕 *Nourriture* : {plots_nourriture} plots\n"
     
     embed.add_field(name="🌱 Répartition des champs", value=detail_text or "Aucun champ requis", inline=False)
-    embed.set_footer(text=f"Basé sur {plots} plots disponibles")
 
     await interaction.response.send_message(embed=embed)
 
+# Récupération du token via les variables d'environnement (GitHub Secrets)
 token = os.getenv('DISCORD_TOKEN')
 if token:
     bot.run(token)
 else:
-    print("Erreur : Le DISCORD_TOKEN n'est pas configuré dans les Secrets GitHub.")
+    print("TOKEN MANQUANT !")
