@@ -129,4 +129,4 @@ async def calculer(interaction: discord.Interaction, potion: str, plots: int, no
 
     await interaction.response.send_message(embed=embed)
 
-    bot.run("DISCORD_TOKEN")
+    bot.run(DISCORD_TOKEN)
