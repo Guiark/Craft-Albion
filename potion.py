@@ -129,9 +129,4 @@ async def calculer(interaction: discord.Interaction, potion: str, plots: int, no
 
     await interaction.response.send_message(embed=embed)
 
-# --- LANCEMENT ---
-token = os.getenv("DISCORD_TOKEN")
-if token:
-    bot.run(token)
-else:
-    print("❌ Erreur : Le DISCORD_TOKEN est introuvable dans les variables d'environnement.") 
+    bot.run("DISCORD_TOKEN")
