@@ -1,10 +1,7 @@
 import discord
 from discord import app_commands
-from discord.ext import commands
 import math
-import os
 import configP
-
 
 # --- LOGIQUE DE CALCUL ---
 def get_info_ingredient(nom_ingredient):
@@ -17,17 +14,6 @@ def get_info_ingredient(nom_ingredient):
         return configP.RENDEMENT_PLANTE, "🌱", False
     return None, "⚔️", False
 
-# --- CONFIGURATION DU BOT ---
-class MyBot(commands.Bot):
-    def __init__(self):
-        intents = discord.Intents.default()
-        super().__init__(command_prefix="!", intents=intents)
-
-    async def setup_hook(self):
-        await self.tree.sync()
-
-bot = MyBot()
-
 # --- AUTO-COMPLÉTION ---
 async def potion_autocomplete(interaction: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:
     potions = list(configP.RECETTESP.keys())
@@ -37,7 +23,8 @@ async def potion_autocomplete(interaction: discord.Interaction, current: str) ->
     ][:25]
 
 # --- COMMANDE SLASH ---
-@bot.tree.command(name="potion", description="Calcule la répartition des plots pour les potions")
+# Changement ici : On utilise @app_commands.command
+@app_commands.command(name="potion", description="Calcule la répartition des plots pour les potions")
 @app_commands.describe(
     potion="Nom de la potion",
     plots="Nombre de plots disponibles (ex: 18)",
@@ -97,11 +84,3 @@ async def calculer(interaction: discord.Interaction, potion: str, plots: int, no
     embed.set_footer(text="Calculateur Artisanal Albion")
 
     await interaction.response.send_message(embed=embed)
-
-
-# --- LANCEMENT ---
-TOKEN = os.getenv('DISCORD_TOKEN') # Ou remplace par ton vrai token entre guillemets
-if TOKEN:
-    bot.run(TOKEN)
-else:
-    print("ERREUR : Token manquant !")
