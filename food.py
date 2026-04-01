@@ -3,7 +3,7 @@ from discord import app_commands
 from discord.ext import commands
 import math
 import os
-import configF  # Ta base de données Food (doit contenir RECETTES_FOOD, FOOD_X10, etc.)
+import configF
 
 # --- LOGIQUE DE CALCUL ---
 def get_info_ingredient(nom_ingredient):
