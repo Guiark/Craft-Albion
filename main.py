@@ -8,11 +8,15 @@ import potion
 
 class MyBot(commands.Bot):
     def __init__(self):
+        # On active TOUS les intents pour être tranquille
         intents = discord.Intents.default()
-        super().__init__(command_prefix="/", intents=intents)
+        intents.message_content = True 
+        super().__init__(command_prefix="!", intents=intents)
 
     async def setup_hook(self):
-        # On ajoute les commandes slash venant de food.py et potion.py
+        # On nettoie l'arbre avant d'ajouter pour éviter les doublons
+        self.tree.clear_commands(guild=None) 
+        
         self.tree.add_command(food.calculer_food)
         self.tree.add_command(potion.calculer)
         await self.tree.sync()
