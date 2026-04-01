@@ -9,7 +9,7 @@ import potion
 class MyBot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
-        super().__init__(command_prefix="!", intents=intents)
+        super().__init__(command_prefix="/", intents=intents)
 
     async def setup_hook(self):
         # On ajoute les commandes slash venant de food.py et potion.py
