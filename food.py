@@ -42,9 +42,6 @@ async def calculer_food(interaction: discord.Interaction, plat: str, plots: int,
     for ing, qte_u in ingredients.items():
         rend, _, est_animal = get_info_ingredient(ing)
         
-        nom_affiche = ing
-        if "pain" in ing.lower():
-            nom_affiche = "Blé (Pain)"
         if rend:
             poids_total_un_craft += (qte_u / rend)
             if est_animal and nourrir_animaux:
