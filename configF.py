@@ -79,12 +79,12 @@ RECETTES_FOOD = {
     # T4
     "Salade de navets T4": {"Navets (T4)": 24, "Blé": 24},
     "Salade de petites pieuvres T4": {"Petite pieuvre (T5)": 1, "Navets (T4)": 2, "Chardon crénelé (T4)": 2, "Chèvre crue (T4)": 2},
-    "Ragoût de chèvre T4": {"Navets (T4)": 4, "Pain (T4)": 4, "Chèvre crue (T4)": 8},
+    "Ragoût de chèvre T4": {"Navets (T4)": 4, "Blé (Pain)": 4, "Chèvre crue (T4)": 8},
     "Ragoût d'anguille verte T4": {"Anguille verte (T3)": 1, "Navets (T4)": 1, "Chardon crénelé (T4)": 1},
     "Ragoût de chèvre avalonien T4": {"Carrotes (T1)": 4, "Navets (T4)": 4, "Energie avalonienne (T6)": 10},
-    "Sandwich à la chèvre T4": {"Pain (T4)": 4, "Chèvre cru (T4)": 8, "Beurre de chèvre (T4)": 2},
+    "Sandwich à la chèvre T4": {"Blé (Pain)": 4, "Chèvre cru (T4)": 8, "Beurre de chèvre (T4)": 2},
     "Sandwich à la loche pétrée T4": {"Loche pétrée (T3)": 1, "Navets (T4)": 1, "Beurre de chèvre (T4)": 1},
-    "Sandwich à la chèvre avalonien T4": {"Pain (T4)": 4, "Chèvre cru (T4)": 8, "Beurre de chèvre (T4)": 2, "Energie avalonienne (T6)": 10},
+    "Sandwich à la chèvre avalonien T4": {"Blé (Pain)": 4, "Chèvre cru (T4)": 8, "Beurre de chèvre (T4)": 2, "Energie avalonienne (T6)": 10},
 
     # T5
     "Soupe aux choux T5": {"Choux (T5)": 144},
@@ -100,12 +100,12 @@ RECETTES_FOOD = {
     # T6
     "Salade de patates T6": {"Patates (T6)": 72, "Choux (T5)": 72},
     "Salade de krakens des profondeurs T6": {"Kraken des profondeurs (T6)": 1, "Patates (T6)": 6, "Digitale furtive (T6)": 6, "Mouton cru (T6)": 6},
-    "Ragoût de mouton T6": {"Patates (T6)": 12, "Pain (T4)": 12, "Mouton cru (T6)": 24},
+    "Ragoût de mouton T6": {"Patates (T6)": 12, "BLé (Pain)": 12, "Mouton cru (T6)": 24},
     "Ragoût d'anguille rosée T6": {"Anguille rosée (T5)": 1, "Patates (T6)": 2, "Digitale furtive (T6)": 2, "lait de mouton (T6)": 2},
     "Ragoût de mouton avalonien T6": {"Choux (T5)": 12, "Patates (T6)": 12, "Mouton cru (T6)": 24, "Energie avalonienne (T6)": 30},
-    "Sandwich au mouton T6": {"Pain (T4)": 12, "Mouton cru (T6)": 24, "Beurre de mouton (T6)": 6},
+    "Sandwich au mouton T6": {"Blé (Pain)": 12, "Mouton cru (T6)": 24, "Beurre de mouton (T6)": 6},
     "Sandwich à la loche franche T6": {"Loche franche (T6)": 1, "Patates (T6)": 2, "Digitale furtive (T6)": 2, "Beurre de mouton (T6)": 2},
-    "Sandwich au mouton avalonien T6": {"Pain (T4)": 12, "Mouton cru (T6)": 24, "Beurre de mouton (T6)": 6, "Energie avalonienne (T6)": 30},
+    "Sandwich au mouton avalonien T6": {"Blé (Pain)": 12, "Mouton cru (T6)": 24, "Beurre de mouton (T6)": 6, "Energie avalonienne (T6)": 30},
 
     # T7
     "Omelette au porc T7": {"Maïs (T7)": 36, "Porc cru (T7)": 72, "Oeuf d'oie (T5)": 18},
@@ -117,10 +117,10 @@ RECETTES_FOOD = {
     "Lutjan purebrume rôti T7": {"Lutjan purebrume (T7)": 1, "Maïs (T7)": 6, "Molène ardente (T7)": 6, "Lait de vache (T8)": 6},
 
     # T8
-    "Ragoût de boeuf T8": {"Citrouille (T8)": 36, "Pain (T4)": 36, "Boeuf cru (T8)": 72},
+    "Ragoût de boeuf T8": {"Citrouille (T8)": 36, "Blé (Pain)": 36, "Boeuf cru (T8)": 72},
     "Ragoût d'anguille morteaux T8": {"Anguille morteau (T8)": 1, "Citrouille (T8)": 8, "Mille-feuille morbide (T8)": 6, "Lait de vache (T8)": 6},
     "Ragoût de boeuf avalonien T8": {"Maïs (T7)": 36, "Citrouille (T8)": 36, "Boeuf cru (T8)": 72, "Energie avalonienne (T6)": 90},
-    "Sandwich au boeuf T8": {"Pain (T4)": 36, "Boeuf cru (T8)": 72, "Beurre de vache (T8)": 18},
+    "Sandwich au boeuf T8": {"Blé (Pain)": 36, "Boeuf cru (T8)": 72, "Beurre de vache (T8)": 18},
     "Sandwich à la loche léopard T8": {"Loche léopard (T7)": 1, "Citrouille (T8)": 6, "Mille-feuille morbide (T8)": 6, "Beurre de vache (T8)": 6},
-    "Sandwich au boeuf avalonien T8": {"Pain (T4)": 36, "Boeuf cru (T8)": 72, "Beurre de vache (T8)": 18, "Energie avalonienne (T6)": 90},
+    "Sandwich au boeuf avalonien T8": {"Blé (Pain)": 36, "Boeuf cru (T8)": 72, "Beurre de vache (T8)": 18, "Energie avalonienne (T6)": 90},
 }
