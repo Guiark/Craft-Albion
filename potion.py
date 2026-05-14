@@ -23,7 +23,6 @@ async def potion_autocomplete(interaction: discord.Interaction, current: str) ->
     ][:25]
 
 # --- COMMANDE SLASH ---
-# Changement ici : On utilise @app_commands.command
 @app_commands.command(name="potion", description="Calcule la répartition des plots pour les potions")
 @app_commands.describe(
     potion="Nom de la potion",
@@ -39,7 +38,7 @@ async def calculer(interaction: discord.Interaction, potion: str, plots: int, no
     ingredients = configP.RECETTESP[potion]
     poids_terrain_par_craft = 0
     
-    # 1. Calcul du poids par craft
+    # 1. Calcul du poids théorique par craft
     for ing, qte_unitaire in ingredients.items():
         rend, _, est_animal = get_info_ingredient(ing)
         if rend:
@@ -48,18 +47,40 @@ async def calculer(interaction: discord.Interaction, potion: str, plots: int, no
                 besoin_nourriture = (qte_unitaire / rend) * configP.ANIMAUX_PAR_ENCLOS * configP.CONSOMMATION_PAR_BÊTE
                 poids_terrain_par_craft += (besoin_nourriture / configP.RENDEMENT_PLANTE)
 
-    # 2. Calcul du nombre de crafts possibles
-    nb_crafts_possibles = math.floor(plots / poids_terrain_par_craft)
-    
+    # 2. Calcul du nombre de crafts avec BOUCLE DE SÉCURITÉ
+    if poids_terrain_par_craft == 0:
+        nb_crafts_possibles = 0
+    else:
+        # Calcul initial basé sur le poids théorique
+        nb_crafts_possibles = math.floor(plots / poids_terrain_par_craft)
+
+    # BOUCLE DE SÉCURITÉ : On vérifie si le total après arrondi (math.ceil) dépasse la limite
+    while nb_crafts_possibles > 0:
+        total_plots_verif = 0
+        for ing, qte_unitaire in ingredients.items():
+            rend, _, est_animal = get_info_ingredient(ing)
+            if rend:
+                besoin_ressource = qte_unitaire * nb_crafts_possibles
+                # On simule le nombre de plots final par ingrédient
+                total_plots_verif += math.ceil(besoin_ressource / rend)
+                
+                if est_animal and nourrir_animaux:
+                    total_nourriture = (besoin_ressource / rend) * configP.ANIMAUX_PAR_ENCLOS * configP.CONSOMMATION_PAR_BÊTE
+                    total_plots_verif += math.ceil(total_nourriture / configP.RENDEMENT_PLANTE)
+        
+        if total_plots_verif <= plots:
+            break # C'est bon, le total arrondi rentre dans la limite demandée
+        nb_crafts_possibles -= 1 # Sinon, on réduit le nombre de crafts et on revérifie
+
     if nb_crafts_possibles == 0:
         await interaction.response.send_message(f"❌ Tu n'as pas assez de plots ({plots}) pour fabriquer cette potion.", ephemeral=True)
         return
 
-    # 3. Calcul des unités finales
+    # Calcul de la production finale après ajustement
     unites_per_craft = 5 if any(x in potion.lower() for x in configP.POTIONS_X5) else 10
     total_potions = nb_crafts_possibles * unites_per_craft
 
-    # 4. Création de l'Embed
+    # 3. Création de l'Embed
     embed = discord.Embed(
         title=f"📊 Simulation : {potion}",
         description=f"Basé sur **{plots}** plots disponibles",
